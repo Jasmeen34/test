@@ -1,0 +1,32 @@
+---
+  - name: Installing and setting up Podman 
+    hosts: aws_ec2
+    become: true
+    tasks: 
+      - name: Run sudo apt update
+        ansible.builtin.apt:
+                update_cache: yes
+        when: ansible_distribution in ["Ubuntu"]
+      - name: Run upgrade dnf
+        ansible.builtin.dnf:
+              name: "*"
+              state: latest
+        when: ansible_distribution in ["Rocky", "Rocky Enterprise Software Foundation"]
+
+      - name: Installing Podman
+        ansible.builtin.package:
+              name: podman
+              state: latest
+
+      - name: Pulling image from dockerhub
+        podman_image:
+           name: docker.io/httpd
+           tag: 2-alpine
+
+      - name: Running the httpd image.
+        containers.podman.podman_container:
+               name: container1
+               image:  docker.io/httpd:2-alpine
+               state: started
+
+                                                    

@@ -1,0 +1,54 @@
+---
+  - hosts: aws_ec2
+    tasks:
+    - name: Creating a new user for ubuntu with sudo
+      become: yes
+      user: 
+        name: newuser
+        password: "password" 
+        createhome: yes
+        shell: /bin/bash
+        groups: 
+         - sudo
+        state: present
+        system: no
+        home: /home
+      when: ansible_distribution in ["Ubuntu"]                                                                           
+    - name: Creating a new user for Rocky linux distro with sudo
+      become: yes
+      user:
+        name: newuser
+        password: "password"
+        createhome: yes
+        shell: /bin/bash
+        groups:
+          -  sudo
+        system: no
+        state: present
+        home: /home
+      when: ansible_distribution in ["Rocky", "Rocky Enterprise Software Foundation"]
+
+    - name: Copying the .ssh folder
+      become: yes
+      copy:
+        src: ~/.ssh
+        dest: /home/newuser/
+        remote_src: yes
+        owner: "newuser"
+          
+
+    - name: disable connection to server via ssh as the root user
+      ansible.builtin.lineinfile:                                                                     
+        dest: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: "PermitRootLogin no"
+        state: present
+        backup: yes
+      become: yes
+      notify:
+       - restart ssh
+    handlers:
+    - name: restart ssh
+      service:
+        name: sshd
+        state: restarted    
